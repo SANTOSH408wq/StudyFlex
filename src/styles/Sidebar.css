@@ -1,0 +1,143 @@
+/* ── Sidebar ─────────────────────────────── */
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 280px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: left 0.3s ease;
+  box-shadow: 16px 0 32px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  margin-bottom: 40px;
+}
+
+.sidebar-logo h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.sidebar-logo .logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(139, 92, 246, 0.8));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  font-family: 'Outfit', sans-serif;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.nav-item.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.nav-item .nav-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.sidebar-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 24px;
+  margin-top: auto;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.user-profile:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(139, 92, 246, 0.8));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-info .user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.user-info .user-email {
+  font-size: 13px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

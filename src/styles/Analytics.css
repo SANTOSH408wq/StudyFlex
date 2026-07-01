@@ -1,0 +1,33 @@
+/* ── Analytics / Chart Card ──────────────── */
+
+.chart-card {
+  /* extends glass-card — apply both classes */
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.chart-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Customizing Recharts Tooltip for Dark Glass Theme */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.recharts-tooltip-wrapper .recharts-tooltip-item {
+  color: #ffffff !important;
+}
