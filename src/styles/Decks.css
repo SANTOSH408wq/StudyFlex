@@ -61,3 +61,15 @@
   color: #94a3b8;
   margin-top: 8px;
 }
+
+@media (max-width: 1024px) {
+  .decks-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .decks-grid {
+    grid-template-columns: 1fr;
+  }
+}

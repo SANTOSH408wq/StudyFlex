@@ -21,18 +21,37 @@
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   padding: 8px 12px;
   margin-bottom: 40px;
 }
 
-.sidebar-logo h2 {
+.logo-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-content h2 {
   font-size: 24px;
   font-weight: 800;
   color: #ffffff;
 }
 
-.sidebar-logo .logo-icon {
+.mobile-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.mobile-close-btn:hover {
+  color: #ffffff;
+}
+
+.logo-content .logo-icon {
   width: 40px;
   height: 40px;
   border-radius: 14px;

@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useState } from 'react';
+import { Menu, GraduationCap } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -25,6 +27,7 @@ function ProtectedRoute({ children }) {
 
 function AppLayout() {
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Pages that should NOT have the sidebar (public pages)
   const publicPaths = ['/', '/login', '/signup'];
@@ -43,7 +46,24 @@ function AppLayout() {
   // Authenticated pages with sidebar
   return (
     <div className="app-layout">
-      <Sidebar />
+      {/* Mobile Header */}
+      <div className="mobile-header">
+        <div className="mobile-logo">
+          <GraduationCap size={24} className="mobile-logo-icon" />
+          <h2>StudyFlex</h2>
+        </div>
+        <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
+          <Menu size={24} />
+        </button>
+      </div>
+
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div className="mobile-overlay" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       <main className="main-content">
         <Routes>
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

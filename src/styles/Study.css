@@ -187,3 +187,44 @@
 .light-theme .completion-card p {
   color: #475569 !important;
 }
+
+@media (max-width: 640px) {
+  .flashcard-face {
+    padding: 24px;
+  }
+  
+  .flashcard-text {
+    font-size: 20px;
+  }
+  
+  .study-controls {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .study-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+  }
+  
+  .completion-card {
+    padding: 40px 20px;
+  }
+  
+  .completion-card h2 {
+    font-size: 24px;
+  }
+  
+  .completion-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .completion-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -10,7 +10,8 @@ import {
   Settings, 
   LogOut,
   GraduationCap,
-  History as HistoryIcon
+  History as HistoryIcon,
+  X
 } from 'lucide-react';
 
 const navItems = [
@@ -21,7 +22,7 @@ const navItems = [
   { path: '/history', label: 'Test History', icon: HistoryIcon },
 ];
 
-function Sidebar() {
+function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -32,13 +33,18 @@ function Sidebar() {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="logo-icon">
-          <GraduationCap size={20} />
+        <div className="logo-content">
+          <div className="logo-icon">
+            <GraduationCap size={20} />
+          </div>
+          <h2>StudyFlex</h2>
         </div>
-        <h2>StudyFlex</h2>
+        <button className="mobile-close-btn" onClick={onClose}>
+          <X size={24} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -52,6 +58,7 @@ function Sidebar() {
               key={item.path}
               to={item.path}
               className={`nav-item ${isActive ? 'active' : ''}`}
+              onClick={onClose}
             >
               <Icon className="nav-icon" size={20} />
               <span>{item.label}</span>
@@ -66,15 +73,16 @@ function Sidebar() {
           to="/settings" 
           className={`nav-item ${location.pathname === '/settings' ? 'active' : ''}`} 
           style={{ textDecoration: 'none' }}
+          onClick={onClose}
         >
           <Settings className="nav-icon" size={20} />
           <span>Settings</span>
         </Link>
-        <button className="nav-item" onClick={handleLogout}>
+        <button className="nav-item" onClick={() => { handleLogout(); onClose(); }}>
           <LogOut className="nav-icon" size={20} />
           <span>Log Out</span>
         </button>
-        <Link to="/settings" className="user-profile" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+        <Link to="/settings" className="user-profile" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }} onClick={onClose}>
           <div className="user-avatar" style={{ overflow: 'hidden' }}>
             {profile?.avatar_url || user?.user_metadata?.avatar_url ? (
               <img src={profile?.avatar_url || user.user_metadata?.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
