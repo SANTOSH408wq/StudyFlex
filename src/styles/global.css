@@ -652,6 +652,24 @@ select.form-input option {
   .page-header h1 {
     font-size: 24px;
   }
+  
+  .chart-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+  
+  .tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .tab {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 13px;
+    text-align: center;
+  }
 }
 
 /* ============================================
