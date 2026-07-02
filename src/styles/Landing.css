@@ -48,6 +48,9 @@
   display: flex;
   align-items: center;
   gap: 32px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .landing-nav-links a {
@@ -138,7 +141,7 @@
   font-size: 36px;
   font-weight: 700;
   color: #ffffff;
-  margin-bottom: 64px;
+  margin-bottom: 16px;
 }
 
 .features-grid {
@@ -188,6 +191,94 @@
   line-height: 1.6;
 }
 
+.features-section.split-features {
+  display: flex;
+  align-items: center;
+  gap: 64px;
+}
+
+.features-image-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.features-dashboard-img {
+  width: 100%;
+  max-width: 800px;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(59, 130, 246, 0.25), 0 0 0 1px rgba(59, 130, 246, 0.2);
+  transition: box-shadow 0.3s;
+}
+
+.features-dashboard-img:hover {
+  box-shadow: 0 32px 64px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+.features-content {
+  flex: 1;
+}
+
+.features-content h2 {
+  text-align: left;
+  font-size: 36px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 40px;
+  margin-top: 0;
+}
+
+.features-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.feature-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(24px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.3s, background 0.3s;
+}
+
+.feature-bar:hover {
+  transform: translateX(8px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.feature-bar-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-bar-text h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.feature-bar-text p {
+  font-size: 14px;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ============================================
    Light Theme Overrides
    ============================================ */
@@ -216,6 +307,33 @@
 
 .light-theme .hero-section p {
   color: #475569 !important;
+}
+
+.light-theme .features-content h2 {
+  color: #0f172a !important;
+}
+
+.light-theme .feature-bar {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-theme .feature-bar-text h3 {
+  color: #0f172a !important;
+}
+
+.light-theme .feature-bar-text p {
+  color: #475569 !important;
+}
+
+.light-theme .features-dashboard-img {
+  box-shadow: 0 24px 48px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-theme .features-dashboard-img:hover {
+  box-shadow: 0 32px 64px rgba(59, 130, 246, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.1) !important;
 }
 
 .light-theme .features-section h2 {

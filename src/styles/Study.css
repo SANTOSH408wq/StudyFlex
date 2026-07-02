@@ -148,3 +148,42 @@
   color: #94a3b8;
   margin-bottom: 12px;
 }
+
+/* ── Completion Screen ─────────── */
+
+.completion-card {
+  text-align: center;
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.completion-card h2 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.completion-card p {
+  font-size: 18px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.completion-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* Light Theme Overrides */
+.light-theme .completion-card h2 {
+  color: #0f172a !important;
+}
+
+.light-theme .completion-card p {
+  color: #475569 !important;
+}

@@ -7,11 +7,13 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import '../styles/Study.css';
 
 function Study() {
   const { user } = useAuth();
   const { deckId } = useParams();
+  const { actualTheme } = useTheme();
   
   const [deck, setDeck] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
@@ -30,6 +32,8 @@ function Study() {
 
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [sessionSaved, setSessionSaved] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isCheckingAnswer, setIsCheckingAnswer] = useState(false);
 
   useEffect(() => {
     if (user && deckId) {
@@ -90,15 +94,58 @@ function Study() {
     setLoading(false);
   }
 
-  const handleTextSubmit = () => {
-    if (isAdvancing || !textInput.trim()) return;
+  const handleTextSubmit = async () => {
+    if (isAdvancing || isCheckingAnswer || !textInput.trim()) return;
     
+    setIsCheckingAnswer(true);
+    const correct = currentFlashcard.correctAnswer.trim();
+    const userAns = textInput.trim();
+    
+    let isCorrect = false;
+    
+    if (correct.toLowerCase() === userAns.toLowerCase()) {
+      isCorrect = true;
+    } else {
+      try {
+        const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+        if (apiKey) {
+          const prompt = `You are a strict but fair grader.
+Question: ${currentFlashcard.front_content}
+Expected Answer: ${correct}
+User's Answer: ${userAns}
+Are these semantically equivalent or is the user's answer correct in context? 
+Reply with exactly one word: 'CORRECT' or 'INCORRECT'.`;
+
+          const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "llama-3.1-8b-instant",
+              messages: [{ role: "user", content: prompt }]
+            })
+          });
+          
+          if (response.ok) {
+            const jsonResponse = await response.json();
+            const aiReply = jsonResponse.choices[0]?.message?.content?.trim().toUpperCase() || "";
+            if (aiReply.includes("CORRECT") && !aiReply.includes("INCORRECT")) {
+              isCorrect = true;
+            }
+          }
+        } else {
+          isCorrect = correct.toLowerCase().includes(userAns.toLowerCase()) || userAns.toLowerCase().includes(correct.toLowerCase());
+        }
+      } catch (e) {
+        console.error("AI grading failed", e);
+        isCorrect = correct.toLowerCase().includes(userAns.toLowerCase()) || userAns.toLowerCase().includes(correct.toLowerCase());
+      }
+    }
+    
+    setIsCheckingAnswer(false);
     setIsAdvancing(true);
-    const correct = currentFlashcard.correctAnswer.toLowerCase();
-    const userAns = textInput.toLowerCase().trim();
-    
-    // Simple matching (can be improved with fuzzy matching if needed)
-    const isCorrect = correct.includes(userAns) || userAns.includes(correct);
     
     setIsAnswerRevealed(true);
     setIsAnswerCorrect(isCorrect);
@@ -168,6 +215,100 @@ function Study() {
       alert("Failed to save your session to the database: " + error.message);
     } else {
       console.log("Session saved successfully:", data);
+    }
+  };
+
+  const handleGenerateMore = async () => {
+    if (isGenerating || !deck) return;
+    setIsGenerating(true);
+    try {
+      const originalTitle = deck.title.replace(' Flashcards', '');
+      
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('title', originalTitle)
+        .limit(1);
+        
+      if (noteError) throw noteError;
+      if (!noteData || noteData.length === 0) {
+        throw new Error("Original note not found. Cannot generate more cards.");
+      }
+      
+      const note = noteData[0];
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+      if (!apiKey) throw new Error("Groq API key is missing");
+      
+      const prompt = "You are an expert tutor. Create multiple-choice flashcards from the provided text. Generate NEW flashcards that test different aspects of the text than typical questions. Return ONLY a raw JSON array of objects, where each object has 'question' (string), 'options' (array of exactly 4 strings), and 'correctAnswer' (string, matching one of the options). DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array.";
+      
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [
+            { role: "system", content: prompt },
+            { role: "user", content: note.content }
+          ]
+        })
+      });
+      
+      const jsonResponse = await response.json();
+      if (!response.ok) throw new Error(jsonResponse.error?.message || "Failed to generate");
+
+      const flashcardsJson = jsonResponse.choices[0].message.content.trim();
+      let newFlashcards;
+      try {
+        const cleanJson = flashcardsJson.replace(/```json/g, '').replace(/```/g, '').trim();
+        newFlashcards = JSON.parse(cleanJson);
+      } catch (e) {
+        throw new Error("Failed to parse AI response.");
+      }
+
+      if (!Array.isArray(newFlashcards) || newFlashcards.length === 0) {
+        throw new Error("No flashcards were generated.");
+      }
+      
+      const cardsToInsert = newFlashcards.map(fc => ({
+        deck_id: deckId,
+        front_content: fc.question,
+        back_content: JSON.stringify({
+          options: fc.options,
+          correctAnswer: fc.correctAnswer
+        }),
+        mastery_level: 0
+      }));
+
+      const { data: insertedCards, error: cardsError } = await supabase
+        .from('flashcards')
+        .insert(cardsToInsert)
+        .select();
+
+      if (cardsError) throw cardsError;
+      
+      const parsedNewCards = insertedCards.map(card => {
+        let options = [];
+        let correctAnswer = card.back_content;
+        try {
+          const parsed = JSON.parse(card.back_content);
+          options = parsed.options;
+          correctAnswer = parsed.correctAnswer;
+        } catch (e) {}
+        return { ...card, options, correctAnswer };
+      });
+      
+      setFlashcards(prev => [...prev, ...parsedNewCards]);
+      alert(`Successfully generated and added ${parsedNewCards.length} new cards!`);
+
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -243,9 +384,14 @@ function Study() {
             <ArrowLeft size={18} />
             Back to Decks
           </Link>
-          <button className="btn-ai">
+          <button 
+            className="btn-ai"
+            onClick={handleGenerateMore}
+            disabled={isGenerating}
+            style={{ opacity: isGenerating ? 0.7 : 1 }}
+          >
             <Sparkles size={18} />
-            Generate More Cards
+            {isGenerating ? 'Generating...' : 'Generate More Cards'}
           </button>
         </div>
         <h1>{deck?.title || 'Study Session'}</h1>
@@ -285,9 +431,9 @@ function Study() {
                 let btnStyle = {
                   padding: '16px 20px',
                   borderRadius: '12px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.03)',
-                  color: '#e2e8f0',
+                  border: `1px solid ${actualTheme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'}`,
+                  background: actualTheme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)',
+                  color: actualTheme === 'light' ? '#0f172a' : '#e2e8f0',
                   fontSize: '16px',
                   textAlign: 'left',
                   cursor: isAdvancing ? 'default' : 'pointer',
@@ -349,16 +495,16 @@ function Study() {
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
-                disabled={isAdvancing}
+                disabled={isAdvancing || isCheckingAnswer}
                 autoFocus
               />
               <button 
                 className="btn-primary" 
                 onClick={handleTextSubmit}
-                disabled={isAdvancing || !textInput.trim()}
+                disabled={isAdvancing || isCheckingAnswer || !textInput.trim()}
                 style={{ width: '100%', justifyContent: 'center', padding: '16px' }}
               >
-                Submit Answer
+                {isCheckingAnswer ? 'Evaluating...' : 'Submit Answer'}
               </button>
               
               {isAnswerRevealed && (

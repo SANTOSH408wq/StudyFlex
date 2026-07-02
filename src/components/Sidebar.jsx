@@ -24,7 +24,7 @@ const navItems = [
 function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -74,13 +74,19 @@ function Sidebar() {
           <LogOut className="nav-icon" size={20} />
           <span>Log Out</span>
         </button>
-        <div className="user-profile">
-          <div className="user-avatar">{user?.user_metadata?.full_name?.charAt(0) || 'U'}</div>
+        <Link to="/settings" className="user-profile" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+          <div className="user-avatar" style={{ overflow: 'hidden' }}>
+            {profile?.avatar_url || user?.user_metadata?.avatar_url ? (
+              <img src={profile?.avatar_url || user.user_metadata?.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              profile?.full_name?.charAt(0) || user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'
+            )}
+          </div>
           <div className="user-info">
-            <div className="user-name">{user?.user_metadata?.full_name || 'User'}</div>
+            <div className="user-name">{profile?.full_name || user?.user_metadata?.full_name || 'User'}</div>
             <div className="user-email">{user?.email}</div>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );

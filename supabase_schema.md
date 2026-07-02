@@ -2,6 +2,20 @@
 
 ```sql
 -- ==========================================
+-- Bucket configuration
+-- ==========================================
+-- First, make sure the bucket is definitely public
+UPDATE storage.buckets SET public = true WHERE id = 'avatars';
+
+-- Next, create a policy that allows ANY authenticated user to upload/update/delete images in the avatars bucket
+CREATE POLICY "Avatar Full Access for Authenticated Users" 
+ON storage.objects 
+FOR ALL 
+TO authenticated 
+USING (bucket_id = 'avatars')
+WITH CHECK (bucket_id = 'avatars');
+
+-- ==========================================
 -- 1. PROFILES TABLE (Linked to auth.users)
 -- ==========================================
 CREATE TABLE public.profiles (

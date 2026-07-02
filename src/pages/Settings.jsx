@@ -6,38 +6,30 @@ import { Camera, Save, Moon, Sun, Lock, ChevronDown } from 'lucide-react';
 import '../styles/Settings.css';
 
 function Settings() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { themePreference, setThemePreference, actualTheme } = useTheme();
 
-  const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
+  const [fullName, setFullName] = useState(profile?.full_name || user?.user_metadata?.full_name || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(profile?.phone || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
 
   useEffect(() => {
-    if (user) {
-      fetchProfile();
+    if (profile) {
+      if (!fullName) setFullName(profile.full_name || user?.user_metadata?.full_name || '');
+      if (!phone) setPhone(profile.phone || '');
+      if (!avatarUrl) setAvatarUrl(profile.avatar_url || user?.user_metadata?.avatar_url || '');
+    } else if (user) {
+      if (!avatarUrl) setAvatarUrl(user.user_metadata?.avatar_url || '');
     }
-  }, [user]);
-
-  async function fetchProfile() {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('phone')
-      .eq('id', user.id)
-      .single();
-    
-    if (data && data.phone) {
-      setPhone(data.phone);
-    }
-    setLoading(false);
-  }
+  }, [profile, user]);
 
   const themeOptions = [
     { value: 'light', label: 'Light Mode' },
@@ -90,6 +82,58 @@ function Settings() {
     setIsSavingSecurity(false);
   };
 
+  const handleAvatarChange = async (event) => {
+    try {
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+      
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      setIsUploading(true);
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update the persistent database profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl }
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setAvatarUrl(publicUrl);
+      alert('Avatar updated successfully!');
+
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      alert('Error uploading avatar: ' + error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="settings-page">
       <div className="page-header">
@@ -108,13 +152,29 @@ function Settings() {
           <form onSubmit={handleProfileSave} className="settings-form">
             <div className="avatar-picker">
               <div className="avatar-preview">
-                {fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                {isUploading ? (
+                  <div style={{ fontSize: '14px', color: '#fff' }}>...</div>
+                ) : avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  fullName?.charAt(0) || user?.email?.charAt(0) || 'U'
+                )}
                 <div className="avatar-overlay">
                   <Camera size={20} />
                 </div>
               </div>
               <div className="avatar-instructions">
-                <span className="btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>Change Avatar</span>
+                <label className="btn-secondary" style={{ padding: '8px 16px', fontSize: '13px', cursor: 'pointer', display: 'inline-block' }}>
+                  {isUploading ? 'Uploading...' : 'Change Avatar'}
+                  <input 
+                    type="file" 
+                    accept="image/png, image/jpeg, image/gif" 
+                    style={{ display: 'none' }} 
+                    onChange={handleAvatarChange}
+                    onClick={(e) => (e.target.value = null)}
+                    disabled={isUploading}
+                  />
+                </label>
                 <p>JPG, GIF or PNG. Max size of 2MB.</p>
               </div>
             </div>

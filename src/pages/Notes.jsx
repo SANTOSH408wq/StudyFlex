@@ -118,8 +118,8 @@ function Notes() {
             {
               role: "system",
               content: testType === 'mcq' 
-                ? "You are an expert tutor. Create multiple-choice flashcards from the provided text. Return ONLY a raw JSON array of objects, where each object has 'question' (string), 'options' (array of exactly 4 strings), and 'correctAnswer' (string, matching one of the options). DO NOT wrap it in markdown block quotes like ```json. ONLY return the array."
-                : "You are a strict Trivia Quizmaster. Extract key facts from the text into unambiguous, specific questions. The 'correctAnswer' MUST be a highly specific, single word or very short phrase (1-3 words max) with NO punctuation. Return ONLY a raw JSON array of objects with 'question' and 'correctAnswer'. DO NOT wrap it in markdown block quotes like ```json. ONLY return the array."
+                ? "You are an expert tutor. Create multiple-choice flashcards from the provided text. Return ONLY a raw JSON array of objects, where each object has 'question' (string), 'options' (array of exactly 4 strings), and 'correctAnswer' (string, matching one of the options). DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array."
+                : "You are an expert tutor. Extract key concepts from the text into clear, logical, and unambiguous questions. The question MUST provide enough context so the answer is obvious to someone who knows the material (e.g., 'What JavaScript keyword is used to declare block-scoped variables?'). The 'correctAnswer' MUST be a highly specific, single word or very short phrase (1-3 words max). Return ONLY a raw JSON array of objects with 'question' and 'correctAnswer'. DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array."
             },
             {
               role: "user",

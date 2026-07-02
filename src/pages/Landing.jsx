@@ -4,6 +4,8 @@ import '../styles/Landing.css';
 import { Sparkles, Brain, BarChart3, BookOpen, GraduationCap, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { sendEmail } from '../utils/resend';
+import dashboardMockupDark from '../assets/dashboard-dark.png';
+import dashboardMockupLight from '../assets/dashboard-light.png';
 
 function Landing() {
   const { themePreference, setThemePreference, actualTheme } = useTheme();
@@ -25,8 +27,8 @@ function Landing() {
         </div>
 
         <div className="nav-buttons" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            className="btn-icon" 
+          <button
+            className="btn-icon"
             onClick={() => setThemePreference(themePreference === 'dark' ? 'light' : 'dark')}
             title="Toggle theme"
             style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -42,7 +44,7 @@ function Landing() {
       <section className="hero-section">
         <div className="hero-badge">
           <Sparkles size={16} />
-          <span>Powered by AI</span>
+          <span>Powered by Groq AI</span>
         </div>
 
         <h1>
@@ -61,41 +63,44 @@ function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="features-section" id="features">
-        <h2>Everything you need to learn effectively</h2>
+      <section className="features-section split-features" id="features">
+        <div className="features-image-container">
+          <img src={actualTheme === 'light' ? dashboardMockupLight : dashboardMockupDark} alt="StudyFlex Dashboard Mockup" className="features-dashboard-img" />
+        </div>
 
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
-              <Brain size={24} style={{ color: '#3b82f6' }} />
-            </div>
-            <h3>AI Flashcard Generation</h3>
-            <p>
-              Paste your notes and let our AI instantly create comprehensive
-              flashcards for any subject.
-            </p>
-          </div>
+        <div className="features-content">
+          <h2>Everything you need to learn effectively</h2>
 
-          <div className="feature-card">
-            <div className="feature-icon" style={{ background: 'rgba(34, 197, 94, 0.15)' }}>
-              <BarChart3 size={24} style={{ color: '#22c55e' }} />
+          <div className="features-bars">
+            <div className="feature-bar">
+              <div className="feature-bar-icon" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
+                <Brain size={24} style={{ color: '#3b82f6' }} />
+              </div>
+              <div className="feature-bar-text">
+                <h3>AI Flashcard Generation</h3>
+                <p>Paste your notes and let our AI instantly create comprehensive flashcards for any subject.</p>
+              </div>
             </div>
-            <h3>Study Analytics</h3>
-            <p>
-              Track your progress with beautiful charts. See your retention
-              rates, study streaks, and weak areas.
-            </p>
-          </div>
 
-          <div className="feature-card">
-            <div className="feature-icon" style={{ background: 'rgba(168, 85, 247, 0.15)' }}>
-              <BookOpen size={24} style={{ color: '#a855f7' }} />
+            <div className="feature-bar">
+              <div className="feature-bar-icon" style={{ background: 'rgba(34, 197, 94, 0.15)' }}>
+                <BarChart3 size={24} style={{ color: '#22c55e' }} />
+              </div>
+              <div className="feature-bar-text">
+                <h3>Study Analytics</h3>
+                <p>Track your progress with beautiful charts. See your retention rates, study streaks, and weak areas.</p>
+              </div>
             </div>
-            <h3>Smart Notebooks</h3>
-            <p>
-              Organize your study materials into notebooks. Write, edit, and
-              manage notes with ease.
-            </p>
+
+            <div className="feature-bar">
+              <div className="feature-bar-icon" style={{ background: 'rgba(168, 85, 247, 0.15)' }}>
+                <BookOpen size={24} style={{ color: '#a855f7' }} />
+              </div>
+              <div className="feature-bar-text">
+                <h3>Smart Notebooks</h3>
+                <p>Organize your study materials into notebooks. Write, edit, and manage notes with ease.</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -108,7 +113,7 @@ function Landing() {
             Our proprietary AI engine doesn't just copy your notes. It understands context, extracts key concepts, and crafts perfect flashcards designed for maximum retention.
           </p>
         </div>
-        
+
         <div className="features-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
           <div className="feature-card glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="feature-icon" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
@@ -134,9 +139,9 @@ function Landing() {
           <h2>Get in Touch</h2>
           <p style={{ color: '#94a3b8', maxWidth: '600px', margin: '0 auto', fontSize: '18px', lineHeight: '1.6' }}>Have questions? Send us a message and we'll get back to you shortly.</p>
         </div>
-        
-        <form 
-          className="glass-card" 
+
+        <form
+          className="glass-card"
           style={{ padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px', margin: '0 auto' }}
           onSubmit={async (e) => {
             e.preventDefault();
