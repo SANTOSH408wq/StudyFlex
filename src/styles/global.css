@@ -25,6 +25,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color-scheme: dark;
+  overflow-x: hidden;
 }
 
 /* ── Layout ──────────────────────────────── */
@@ -560,10 +561,14 @@ select.form-input option {
   }
   
   .sidebar {
-    left: -280px;
+    left: auto;
+    right: -280px;
+    border-right: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
   }
   .sidebar.open {
-    left: 0;
+    left: auto;
+    right: 0;
   }
   
   .mobile-close-btn {

@@ -252,3 +252,25 @@
   background: rgba(59, 130, 246, 0.1);
   color: #0f172a;
 }
+
+@media (max-width: 640px) {
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .avatar-picker {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .theme-toggle-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .custom-dropdown {
+    width: 100%;
+  }
+}
