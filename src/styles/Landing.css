@@ -398,7 +398,7 @@
     margin: 0 auto;
   }
   
-  .hero-buttons .btn-large {
+  .hero-buttons .btn-large, .hero-buttons .btn-secondary {
     width: 100%;
     justify-content: center;
   }
@@ -414,6 +414,24 @@
   }
   
   .landing-nav {
-    padding: 8px 16px;
+    padding: 8px 12px;
+    width: 95%;
+  }
+  
+  .nav-buttons {
+    gap: 8px;
+  }
+  
+  .nav-buttons .btn-ghost {
+    display: none !important;
+  }
+  
+  .nav-buttons .btn-primary {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+  
+  .landing-logo span {
+    font-size: 20px;
   }
 }

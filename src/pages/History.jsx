@@ -71,7 +71,7 @@ function History() {
       </div>
 
       {!loading && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
           <div className="glass-card" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
               <TrendingUp size={20} color="#3b82f6" />
@@ -124,9 +124,9 @@ function History() {
               : 0;
 
             return (
-              <div key={session.id} className="glass-card" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: `4px solid ${accuracy >= 80 ? '#4ade80' : accuracy >= 50 ? '#fb923c' : '#f87171'}` }}>
+              <div key={session.id} className="glass-card" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', borderLeft: `4px solid ${accuracy >= 80 ? '#4ade80' : accuracy >= 50 ? '#fb923c' : '#f87171'}` }}>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: '1 1 300px' }}>
                   <div style={{ 
                     width: '48px', height: '48px', borderRadius: '14px', 
                     background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6',

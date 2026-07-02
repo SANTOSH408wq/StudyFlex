@@ -81,6 +81,7 @@ body {
   padding: 24px;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
 }
 
 .glass-card:hover {
@@ -694,10 +695,36 @@ body.light-theme {
 .light-theme .sidebar {
   background: rgba(255, 255, 255, 0.35);
   border-right-color: rgba(0, 0, 0, 0.08);
+  border-left-color: rgba(0, 0, 0, 0.08);
 }
 
 .light-theme .sidebar-footer {
   border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+.light-theme .mobile-header {
+  background: rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .mobile-logo h2 {
+  color: #0f172a;
+}
+
+.light-theme .mobile-menu-btn {
+  color: #475569;
+}
+
+.light-theme .mobile-overlay {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.light-theme .mobile-close-btn {
+  color: #475569;
+}
+
+.light-theme .mobile-close-btn:hover {
+  color: #0f172a;
 }
 
 .light-theme .nav-item {

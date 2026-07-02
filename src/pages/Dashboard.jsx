@@ -275,7 +275,7 @@ function Dashboard() {
               activities.map((activity, i) => (
                 <div className="activity-item fade-in-up" key={i} style={{ animationDelay: `${i * 0.1}s` }}>
                   <div className={`activity-dot ${activity.color}`}></div>
-                  <div className="activity-content">
+                  <div className="activity-details">
                     <div className="activity-text">{activity.text}</div>
                     <div className="activity-time">{activity.time}</div>
                   </div>

@@ -131,6 +131,7 @@
 
 .activity-details {
   flex: 1;
+  min-width: 0;
 }
 
 .activity-text {
