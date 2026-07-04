@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import '../styles/Notes.css';
-import { Search, Plus, Calendar, X, Sparkles, Trash2 } from 'lucide-react';
+import { Search, Plus, Calendar, X, Sparkles, Trash2, Image as ImageIcon, FileText, ChevronDown } from 'lucide-react';
 import { supabase } from '../supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,12 +16,17 @@ function Notes() {
   const [selectedNote, setSelectedNote] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [testType, setTestType] = useState('mcq');
+  const [testTypeDropdownOpen, setTestTypeDropdownOpen] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [noteSummary, setNoteSummary] = useState(null);
 
   // New Note State
   const [newTitle, setNewTitle] = useState('');
   const [newSubject, setNewSubject] = useState('');
   const [newContent, setNewContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -74,6 +79,7 @@ function Notes() {
       setNewTitle('');
       setNewSubject('');
       setNewContent('');
+      setPreviewImage(null);
     }
     setIsSaving(false);
   }
@@ -90,6 +96,102 @@ function Notes() {
       alert(error.message);
     } else {
       setNotes(notes.filter((n) => n.id !== id));
+    }
+  }
+
+  async function handleTranscribeImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsTranscribing(true);
+    try {
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+      if (!apiKey) throw new Error("Groq API key not found in .env");
+
+      const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+      setPreviewImage(base64Image);
+      
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "Transcribe the handwritten or printed notes in this image with high precision. Format the transcription neatly with markdown headers and bullet points where appropriate. Do not include any extra conversational text."
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: base64Image
+                  }
+                }
+              ]
+            }
+          ]
+        })
+      });
+
+      const jsonResponse = await response.json();
+      if (!response.ok) throw new Error(jsonResponse.error?.message || "Failed to transcribe");
+
+      const transcription = jsonResponse.choices[0].message.content.trim();
+      setNewContent(prev => prev ? prev + '\n\n' + transcription : transcription);
+    } catch (err) {
+      alert("Error transcribing image: " + err.message);
+    } finally {
+      setIsTranscribing(false);
+    }
+  }
+
+  async function handleSummarizeNote(note) {
+    if (isSummarizing) return;
+    setIsSummarizing(true);
+    try {
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+      if (!apiKey) throw new Error("Groq API key not found in .env");
+
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert at summarizing notes. Create a concise, well-formatted summary of the provided text. Use bullet points and bold text for key concepts."
+            },
+            {
+              role: "user",
+              content: note.content
+            }
+          ]
+        })
+      });
+
+      const jsonResponse = await response.json();
+      if (!response.ok) throw new Error(jsonResponse.error?.message || "Failed to generate summary");
+
+      setNoteSummary(jsonResponse.choices[0].message.content.trim());
+    } catch (err) {
+      alert("Error summarizing notes: " + err.message);
+    } finally {
+      setIsSummarizing(false);
     }
   }
 
@@ -113,12 +215,12 @@ function Notes() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "llama-3.3-70b-versatile",
           messages: [
             {
               role: "system",
               content: testType === 'mcq' 
-                ? "You are an expert tutor. Create multiple-choice flashcards from the provided text. Return ONLY a raw JSON array of objects, where each object has 'question' (string), 'options' (array of exactly 4 strings), and 'correctAnswer' (string, matching one of the options). DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array."
+                ? "You are an expert tutor. Create multiple-choice flashcards from the provided text. Return ONLY a raw JSON array of objects, where each object has 'question' (string), 'options' (array of exactly 4 distinct strings), and 'correctAnswer' (string, MUST EXACTLY match one of the items in the options array). DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array."
                 : "You are an expert tutor. Extract key concepts from the text into clear, logical, and unambiguous questions. The question MUST provide enough context so the answer is obvious to someone who knows the material (e.g., 'What JavaScript keyword is used to declare block-scoped variables?'). The 'correctAnswer' MUST be a highly specific, single word or very short phrase (1-3 words max). Return ONLY a raw JSON array of objects with 'question' and 'correctAnswer'. DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array."
             },
             {
@@ -244,7 +346,10 @@ function Notes() {
               className="note-card glass-card" 
               key={note.id} 
               style={{ position: 'relative', cursor: 'pointer' }}
-              onClick={() => setSelectedNote(note)}
+              onClick={() => {
+                setSelectedNote(note);
+                setNoteSummary(null);
+              }}
             >
               <button 
                 className="btn-icon" 
@@ -277,12 +382,12 @@ function Notes() {
       </div>
 
       {/* View Note Modal */}
-      {selectedNote && (
-        <div className="modal-overlay" onClick={() => setSelectedNote(null)}>
+      {selectedNote && !noteSummary && (
+        <div className="modal-overlay" onClick={() => { setSelectedNote(null); setNoteSummary(null); }}>
           <div className="modal" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header" style={{ marginBottom: '16px' }}>
               <div>
-                <span className="note-tag" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', marginBottom: '8px', display: 'inline-block' }}>
+                <span className="note-tag" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', marginBottom: '8px', display: 'inline-block', borderRadius: '9999px', padding: '4px 12px', fontSize: '13px', fontWeight: 500 }}>
                   {selectedNote.subject || 'General'}
                 </span>
                 <h2 style={{ fontSize: '24px' }}>{selectedNote.title}</h2>
@@ -290,8 +395,8 @@ function Notes() {
                   {new Date(selectedNote.created_at).toLocaleDateString()}
                 </div>
               </div>
-              <button className="btn-icon" onClick={() => setSelectedNote(null)} style={{ alignSelf: 'flex-start' }}>
-                <X size={20} />
+              <button className="btn-icon" onClick={() => { setSelectedNote(null); setNoteSummary(null); }} style={{ alignSelf: 'flex-start', flexShrink: 0 }}>
+                <X size={20} strokeWidth={2.5} />
               </button>
             </div>
             
@@ -299,24 +404,94 @@ function Notes() {
               {selectedNote.content || 'No content provided.'}
             </div>
 
-            <div className="modal-actions" style={{ marginTop: '24px', justifyContent: 'flex-start', display: 'flex', gap: '12px' }}>
-              <select 
-                className="form-input" 
-                style={{ width: '160px', padding: '12px' }} 
-                value={testType} 
-                onChange={(e) => setTestType(e.target.value)}
-              >
-                <option value="mcq">MCQ Test</option>
-                <option value="one-word">One-Word Test</option>
-              </select>
+            <div className="modal-actions" style={{ marginTop: '24px', justifyContent: 'flex-start', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '12px', flex: '1 1 100%' }}>
+                <div className="custom-dropdown" style={{ width: '160px' }}>
+                  <div 
+                    className="form-input custom-dropdown-button" 
+                    onClick={() => setTestTypeDropdownOpen(!testTypeDropdownOpen)}
+                    style={{ padding: '12px', height: '100%', minHeight: '44px' }}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: 500 }}>{testType === 'mcq' ? 'MCQ Test' : 'One-Word Test'}</span>
+                    <ChevronDown size={18} style={{ transform: testTypeDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                  </div>
+
+                  {testTypeDropdownOpen && (
+                    <div className="custom-dropdown-menu">
+                      <div
+                        className={`custom-dropdown-item ${testType === 'mcq' ? 'active' : ''}`}
+                        onClick={() => { setTestType('mcq'); setTestTypeDropdownOpen(false); }}
+                      >
+                        MCQ Test
+                      </div>
+                      <div
+                        className={`custom-dropdown-item ${testType === 'one-word' ? 'active' : ''}`}
+                        onClick={() => { setTestType('one-word'); setTestTypeDropdownOpen(false); }}
+                      >
+                        One-Word Test
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button 
+                  className="btn-ai" 
+                  onClick={() => handleGenerateFlashcards(selectedNote)}
+                  disabled={isGenerating}
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  <Sparkles size={18} />
+                  {isGenerating ? 'Generating...' : 'Generate Flashcards'}
+                </button>
+              </div>
+              
               <button 
-                className="btn-ai" 
-                onClick={() => handleGenerateFlashcards(selectedNote)}
-                disabled={isGenerating}
-                style={{ flex: 1, justifyContent: 'center' }}
+                className="hover:opacity-90 hover:-translate-y-[1px] transition-all" 
+                onClick={() => handleSummarizeNote(selectedNote)}
+                disabled={isSummarizing}
+                style={{ 
+                  flex: '1 1 100%', 
+                  justifyContent: 'center', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  padding: '10px 20px', 
+                  background: 'linear-gradient(135deg, #10b981, #059669)', 
+                  color: '#ffffff', 
+                  border: 'none', 
+                  borderRadius: '10px', 
+                  fontSize: '0.9rem', 
+                  fontWeight: '600', 
+                  cursor: 'pointer' 
+                }}
               >
-                <Sparkles size={18} />
-                {isGenerating ? 'Analyzing Note and Generating Cards...' : 'Generate Flashcards with AI'}
+                <FileText size={18} />
+                {isSummarizing ? 'Summarizing...' : 'Summarize Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Summary Modal */}
+      {noteSummary && (
+        <div className="modal-overlay" onClick={() => setNoteSummary(null)} style={{ zIndex: 1000 }}>
+          <div className="modal text-foreground" style={{ maxWidth: '650px', width: '90%', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                <Sparkles size={24} style={{ color: '#10b981' }} /> AI Summary
+              </h2>
+              <button className="btn-icon" onClick={() => setNoteSummary(null)} style={{ alignSelf: 'flex-start', flexShrink: 0 }}>
+                <X size={20} strokeWidth={2.5} />
+              </button>
+            </div>
+            
+            <div className="note-content" style={{ flex: 1, overflowY: 'auto', padding: '20px', whiteSpace: 'pre-wrap', lineHeight: '1.6', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', fontSize: '15px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+              {noteSummary}
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '20px', justifyContent: 'flex-end', display: 'flex' }}>
+              <button className="btn-secondary" onClick={() => setNoteSummary(null)}>
+                Close Summary
               </button>
             </div>
           </div>
@@ -324,12 +499,12 @@ function Notes() {
       )}
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={() => { setShowModal(false); setPreviewImage(null); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Create New Note</h2>
-              <button className="btn-icon" onClick={() => setShowModal(false)}>
-                <X size={20} />
+              <button className="btn-icon" onClick={() => { setShowModal(false); setPreviewImage(null); }} style={{ flexShrink: 0 }}>
+                <X size={20} strokeWidth={2.5} />
               </button>
             </div>
             <form className="auth-form" onSubmit={handleSaveNote}>
@@ -356,7 +531,20 @@ function Notes() {
                 />
               </div>
               <div className="form-group">
-                <label>Content</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>
+                  <label style={{ margin: 0 }}>Content</label>
+                  <label className="btn-ai" style={{ color: '#ffffff', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', margin: 0, opacity: isTranscribing ? 0.7 : 1 }}>
+                    <ImageIcon size={14} />
+                    {isTranscribing ? 'Transcribing...' : 'Scan Image'}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: 'none' }} 
+                      onChange={handleTranscribeImage}
+                      disabled={isTranscribing}
+                    />
+                  </label>
+                </div>
                 <textarea
                   className="form-textarea"
                   placeholder="Start writing your notes here..."
@@ -364,6 +552,14 @@ function Notes() {
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                 />
+                {previewImage && (
+                  <div style={{ marginTop: '12px', position: 'relative', display: 'inline-block' }}>
+                    <img src={previewImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)' }} />
+                    <button type="button" onClick={() => setPreviewImage(null)} style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
               
               <div className="modal-actions" style={{ marginTop: '24px' }}>

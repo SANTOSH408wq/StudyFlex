@@ -240,7 +240,7 @@ Reply with exactly one word: 'CORRECT' or 'INCORRECT'.`;
       const apiKey = import.meta.env.VITE_GROQ_API_KEY;
       if (!apiKey) throw new Error("Groq API key is missing");
       
-      const prompt = "You are an expert tutor. Create multiple-choice flashcards from the provided text. Generate NEW flashcards that test different aspects of the text than typical questions. Return ONLY a raw JSON array of objects, where each object has 'question' (string), 'options' (array of exactly 4 strings), and 'correctAnswer' (string, matching one of the options). DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array.";
+      const prompt = "You are an expert tutor. Create multiple-choice flashcards from the provided text. Generate NEW flashcards that test different aspects of the text than typical questions. Return ONLY a raw JSON array of objects, where each object has 'question' (string), 'options' (array of exactly 4 distinct strings), and 'correctAnswer' (string, MUST EXACTLY match one of the items in the options array). DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array.";
       
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -249,7 +249,7 @@ Reply with exactly one word: 'CORRECT' or 'INCORRECT'.`;
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "llama-3.3-70b-versatile",
           messages: [
             { role: "system", content: prompt },
             { role: "user", content: note.content }

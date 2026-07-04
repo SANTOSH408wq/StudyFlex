@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Trash2 } from 'lucide-react';
+import { Search, Plus, Trash2, Sparkles, ChevronDown } from 'lucide-react';
 import '../styles/Decks.css';
 import { supabase } from '../supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,9 +13,11 @@ function Decks() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDeckTitle, setNewDeckTitle] = useState('');
-  const [newDeckEmoji, setNewDeckEmoji] = useState('📚');
+  const [newDeckSubject, setNewDeckSubject] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [deckType, setDeckType] = useState('mcq');
+  const [deckTypeDropdownOpen, setDeckTypeDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -48,27 +50,94 @@ function Decks() {
     if (!newDeckTitle.trim()) return;
     setIsSaving(true);
     
-    const { data, error } = await supabase
-      .from('decks')
-      .insert([
-        {
-          user_id: user.id,
-          title: newDeckTitle,
-          subject: newDeckEmoji, // Storing emoji in the subject column
-          color_theme: 'rgba(59,130,246,0.1)',
-        }
-      ])
-      .select();
+    try {
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+      if (!apiKey) throw new Error("Groq API key not found in .env");
 
-    if (error) {
-      alert(error.message);
-    } else if (data) {
-      setDecks([data[0], ...decks]);
+      // 1. Generate Flashcards using AI based on Title
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: deckType === 'mcq'
+                ? "You are an expert tutor. Create 10 multiple-choice flashcards for the topic provided by the user. Return ONLY a raw JSON array of objects, where each object has 'question' (string), 'options' (array of exactly 4 distinct strings), and 'correctAnswer' (string, MUST EXACTLY match one of the items in the options array). DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array."
+                : "You are an expert tutor. Create 10 one-word answer flashcards for the topic provided by the user. The question MUST provide enough context so the answer is obvious to someone who knows the material. The 'correctAnswer' MUST be a highly specific, single word or very short phrase (1-3 words max). Return ONLY a raw JSON array of objects with 'question' and 'correctAnswer'. DO NOT wrap it in markdown block quotes like ```json. DO NOT include any code comments (like //) in the JSON. ONLY return the array."
+            },
+            {
+              role: "user",
+              content: `Topic: ${newDeckTitle}`
+            }
+          ]
+        })
+      });
+
+      const jsonResponse = await response.json();
+      if (!response.ok) throw new Error(jsonResponse.error?.message || "Failed to generate questions");
+
+      const flashcardsJson = jsonResponse.choices[0].message.content.trim();
+      let flashcards;
+      try {
+        const cleanJson = flashcardsJson.replace(/```json/g, '').replace(/```/g, '').trim();
+        flashcards = JSON.parse(cleanJson);
+      } catch (e) {
+        throw new Error("Failed to parse AI response. " + flashcardsJson);
+      }
+
+      if (!Array.isArray(flashcards) || flashcards.length === 0) {
+        throw new Error("No flashcards were generated.");
+      }
+
+      // 2. Insert Deck
+      const { data: deckData, error: deckError } = await supabase
+        .from('decks')
+        .insert([
+          {
+            user_id: user.id,
+            title: newDeckTitle,
+            subject: newDeckSubject.trim() || 'AI Generated',
+            color_theme: 'rgba(59,130,246,0.1)',
+          }
+        ])
+        .select();
+
+      if (deckError) throw deckError;
+      const newDeck = deckData[0];
+
+      // 3. Insert Flashcards
+      const cardsToInsert = flashcards.map(fc => ({
+        deck_id: newDeck.id,
+        front_content: fc.question,
+        back_content: JSON.stringify({
+          options: fc.options,
+          correctAnswer: fc.correctAnswer
+        }),
+        mastery_level: 0
+      }));
+
+      const { error: cardsError } = await supabase
+        .from('flashcards')
+        .insert(cardsToInsert);
+
+      if (cardsError) throw cardsError;
+
+      // Update local state with the new deck (mocking flashcards count)
+      newDeck.flashcards = cardsToInsert;
+      setDecks([newDeck, ...decks]);
       setIsModalOpen(false);
       setNewDeckTitle('');
-      setNewDeckEmoji('📚');
+      setNewDeckSubject('');
+    } catch (err) {
+      alert("Error creating deck: " + err.message);
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   }
 
   async function handleDeleteDeck(id) {
@@ -189,21 +258,20 @@ function Decks() {
             <div className="modal-header">
               <h2>Create New Deck</h2>
             </div>
-            
+
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#94a3b8', fontSize: '14px' }}>Deck Emoji</label>
+              <label style={{ display: 'block', marginBottom: '8px', color: '#94a3b8', fontSize: '14px' }}>Deck Subject</label>
               <input
                 className="form-input"
                 type="text"
-                placeholder="📚"
-                maxLength={2}
-                value={newDeckEmoji}
-                onChange={(e) => setNewDeckEmoji(e.target.value)}
+                placeholder="e.g. Computer Science"
+                value={newDeckSubject}
+                onChange={(e) => setNewDeckSubject(e.target.value)}
               />
             </div>
-
+            
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#94a3b8', fontSize: '14px' }}>Deck Title</label>
+              <label style={{ display: 'block', marginBottom: '8px', color: '#94a3b8', fontSize: '14px' }}>Deck Topic</label>
               <input
                 className="form-input"
                 type="text"
@@ -211,12 +279,41 @@ function Decks() {
                 value={newDeckTitle}
                 onChange={(e) => setNewDeckTitle(e.target.value)}
               />
+              <p style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>AI will automatically generate flashcards based on this topic.</p>
             </div>
 
-            <div className="modal-actions">
+            <div className="modal-actions" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="custom-dropdown" style={{ width: '160px', marginRight: 'auto' }}>
+                <div 
+                  className="form-input custom-dropdown-button" 
+                  onClick={() => setDeckTypeDropdownOpen(!deckTypeDropdownOpen)}
+                  style={{ padding: '12px', height: '100%', minHeight: '44px' }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 500 }}>{deckType === 'mcq' ? 'MCQ Test' : 'One-Word Test'}</span>
+                  <ChevronDown size={18} style={{ transform: deckTypeDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                </div>
+
+                {deckTypeDropdownOpen && (
+                  <div className="custom-dropdown-menu">
+                    <div
+                      className={`custom-dropdown-item ${deckType === 'mcq' ? 'active' : ''}`}
+                      onClick={() => { setDeckType('mcq'); setDeckTypeDropdownOpen(false); }}
+                    >
+                      MCQ Test
+                    </div>
+                    <div
+                      className={`custom-dropdown-item ${deckType === 'one-word' ? 'active' : ''}`}
+                      onClick={() => { setDeckType('one-word'); setDeckTypeDropdownOpen(false); }}
+                    >
+                      One-Word Test
+                    </div>
+                  </div>
+                )}
+              </div>
               <button className="btn-ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleAddDeck} disabled={isSaving}>
-                {isSaving ? 'Creating...' : 'Create Deck'}
+              <button className="btn-ai" onClick={handleAddDeck} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={16} />
+                {isSaving ? 'Generating Cards...' : 'Generate Deck'}
               </button>
             </div>
           </div>
