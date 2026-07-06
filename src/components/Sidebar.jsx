@@ -32,6 +32,11 @@ function Sidebar({ isOpen, onClose }) {
     navigate('/login');
   };
 
+  const activeIndex = navItems.findIndex(item => 
+    location.pathname === item.path || 
+    (item.path === '/decks' && location.pathname.startsWith('/study'))
+  );
+
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       {/* Logo */}
@@ -48,7 +53,14 @@ function Sidebar({ isOpen, onClose }) {
       </div>
 
       {/* Navigation */}
-      <nav className="sidebar-nav">
+      <nav 
+        className="sidebar-nav"
+        style={{
+          '--active-index': activeIndex !== -1 ? activeIndex : 0,
+          '--is-active': activeIndex !== -1 ? 1 : 0
+        }}
+      >
+        <div className="active-indicator" />
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path || 
